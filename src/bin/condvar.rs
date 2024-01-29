@@ -1,5 +1,6 @@
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
+use std::time::Duration;
 
 #[allow(dead_code)]
 #[allow(unused_variables)]
@@ -28,65 +29,95 @@ fn main() {
 
     worker_threads.join();
     event_loop.join();*/
-
-    /*todo initiere threads som sitter og venter på at tasks skal dukke opp (start)
-     * Legge til tasks i task-listen
-     * Poppe av tasklisten som skal være protected med lock
-     *      Bruke condvar for om task-listen er ledig
-     *      Kjør tasken utenfor loopen2
-     * Legge til stop() som automatisk breaker løkka (breaker while true)
-     * Legge til post_timeout som venter x-sec før tasken kjøres*/
 }
+
+enum Message {
+    NewTask(Task),
+    Terminate,
+}
+
+//Declare a type for the task to avoid syntax cluttering
+type Task = Box<dyn FnOnce() + Send + 'static>;
 
 #[allow(dead_code)]
 #[allow(unused_variables)]
+///
+/// Arc allows shared variables (mutex. task queue, condvar) to be shared - drops with zero
+/// references.
+///
+/// Declare a task type to avoid needing to specify type each time
+///
+/// Threads vec is needed to store the threads.
+///
+/// Is_finished flag is used to notify threads when to break loop
+/// Saw that you maybe could you condvar - broadcast (but gpt suggestion).
 struct Workers {
     nr_workers: usize,
-    tasks: Vec<fn()>,
-    //threads: Vec<JoinHandle<()>>,
+    tasks: Arc<(Mutex<Vec<Task>>, Condvar)>,
+    threads: Vec<thread::JoinHandle<()>>, //Need to store thread somewhere
+    is_finished: bool,
 }
 
 #[allow(dead_code)]
 #[allow(unused_variables)]
 impl Workers {
     fn new(nr_workers: usize) -> Self {
+        let tasks = Arc::new((Mutex::new(Vec::<Task>::new()), Condvar::new()));
+        let threads = Vec::with_capacity(nr_workers);
+
+        //how the fuck do i while() on a variable that has yet to be declared????
+
+        for i in 0..nr_workers {
+            let thread = thread::spawn(move || loop {
+                let (lock, cvar) = &*tasks;
+
+                let mut task_queue = lock.lock().unwrap();
+
+                while task_queue.is_empty() {
+                    task_queue = cvar.wait(task_queue).unwrap();
+                }
+
+                let task = task_queue.pop().unwrap();
+                drop(lock);
+
+                task();
+            });
+        }
+
         Workers {
             nr_workers,
-            tasks: Vec::new(),
+            tasks,
+            threads,
+            is_finished: false,
         }
     }
 
-    fn start(&self, pair: Arc<(Mutex<bool>, Condvar)>) {
-        let handler = thread::spawn(move || {});
+    fn post(&self, task: Task) {
+        let (lock, cvar) = &*self.tasks;
 
-        //todo instantiate x-threads
-        //thread spawn and such
+        let mut queue = lock.lock().unwrap();
+        queue.push(task);
 
-        /*thread::spawn(move|| {
-                    let (lock, cvar) = &*pair2;
-                    let mut started = lock.lock().unwrap();
-                    *started = true;
-                    // We notify the condvar that the value has changed.
-                    cvar.notify_one();
-        });*/
+        cvar.notify_one();
     }
 
-    fn post(&mut self, task: fn()) {
-        //todo pass task into vector
-        //possibly needing a mutex?
-        self.tasks.push(task);
+    fn stop(&mut self) {
+        self.is_finished = true;
+        let (lock, _) = &*self.tasks;
+        let mut queue = lock.lock().unwrap();
+        queue.clear();
     }
 
-    fn stop(&self) {
-        //todo stop when vec is empty (call it inside post?)
-        //probs need mutex because you need to pop off item if not empty??
+    fn post_timeout(&self, task: Task, delay: u64) {
+        thread::sleep(Duration::from_millis(delay));
+        Workers::post(self, task);
     }
 
-    fn post_timeout(&self, delay: usize) {
-        //todo start running function after x millisec
-    }
+    fn drop(&mut self) {
+        Workers::stop(self);
 
-    fn join(&self) {
-        //for each thread in threads, join();
+        for thread in &self.threads {
+            let _ = &thread.join();
+        }
     }
 }
