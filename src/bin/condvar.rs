@@ -69,6 +69,8 @@ impl Workers {
         //how the fuck do i while() on a variable that has yet to be declared????
 
         for i in 0..nr_workers {
+            let tasks = Arc::clone(&tasks);
+
             let thread = thread::spawn(move || loop {
                 let (lock, cvar) = &*tasks;
 
