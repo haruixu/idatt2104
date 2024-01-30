@@ -2,46 +2,50 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 use std::time::Duration;
 
-#[allow(dead_code)]
-#[allow(unused_variables)]
-
 fn main() {
-    let worker_threads = Workers::new(4);
-    let event_loop = Workers::new(1);
+    let mut worker_threads = Workers::new(4); //Create 4 internal threads
+    let mut event_loop = Workers::new(1); //Create 1 internal thread
 
-    //Creating a pair each for worker threads and event loops to prevent contention for same lock
-    let pair = Arc::new((Mutex::new(false), Condvar::new()));
-    let pair_a = Arc::clone(&pair);
-    let pair_b = Arc::clone(&pair);
+    worker_threads.post(Box::new(|| {
+        let mut sum = 0;
+        for i in 0..10 {
+            sum += i;
+        }
+        println!("Sum: {sum}");
+    }));
 
-    let pair2 = Arc::new((Mutex::new(false), Condvar::new()));
-    let pair2_a = Arc::clone(&pair2);
-    let pair_b = Arc::clone(&pair2);
+    /*worker_threads.post(Box::new(|| {
+        let mut sum = 0;
+        for i in 0..20 {
+            sum += i;
+        }
+        println!("Sum: {sum}");
+    }));
 
-    /*worker_threads.start(); //Create 4 internal threads
-    event_loop.start(); //Create 2 interanl thread
+    event_loop.post(Box::new(|| {
+        let mut sum = 0;
+        for i in 0..30 {
+            sum += i;
+        }
+        println!("Sum: {sum}");
+    }));
 
-    worker_threads.post(|| {});
-    worker_threads.post(|| {});
-
-    event_loop.post(|| {});
-    event_loop.post(|| {});
+    event_loop.post(Box::new(|| {
+        let mut sum = 0;
+        for i in 0..40 {
+            sum += i;
+        }
+        println!("Sum: {sum}");
+    }));*/
 
     worker_threads.join();
-    event_loop.join();*/
-}
 
-enum Message {
-    NewTask(Task),
-    Terminate,
+    println!("falling out of scope");
 }
 
 //Declare a type for the task to avoid syntax cluttering
 type Task = Box<dyn FnOnce() + Send + 'static>;
 
-#[allow(dead_code)]
-#[allow(unused_variables)]
-///
 /// Arc allows shared variables (mutex. task queue, condvar) to be shared - drops with zero
 /// references.
 ///
@@ -52,50 +56,55 @@ type Task = Box<dyn FnOnce() + Send + 'static>;
 /// Is_finished flag is used to notify threads when to break loop
 /// Saw that you maybe could you condvar - broadcast (but gpt suggestion).
 struct Workers {
-    nr_workers: usize,
     tasks: Arc<(Mutex<Vec<Task>>, Condvar)>,
     threads: Vec<thread::JoinHandle<()>>, //Need to store thread somewhere
     is_finished: bool,
 }
 
-#[allow(dead_code)]
-#[allow(unused_variables)]
 impl Workers {
     fn new(nr_workers: usize) -> Self {
-        //Må clone, men er løsningen å passe fra main?
         let tasks = Arc::new((Mutex::new(Vec::<Task>::new()), Condvar::new()));
-        let threads = Vec::with_capacity(nr_workers);
+        let mut threads = Vec::with_capacity(nr_workers);
+        let is_finished = false;
 
-        //how the fuck do i while() on a variable that has yet to be declared????
-
-        for i in 0..nr_workers {
+        for _ in 0..nr_workers {
             let tasks = Arc::clone(&tasks);
 
-            let thread = thread::spawn(move || loop {
-                let (lock, cvar) = &*tasks;
+            let thread = thread::spawn(move || {
+                println!("Creating thread");
+                while !is_finished {
+                    let (lock, cvar) = &*tasks;
 
-                let mut task_queue = lock.lock().unwrap();
+                    let mut task_queue = lock.lock().unwrap();
 
-                while task_queue.is_empty() {
-                    task_queue = cvar.wait(task_queue).unwrap();
+                    while task_queue.is_empty() {
+                        println!("Waiting");
+                        task_queue = cvar.wait(task_queue).unwrap();
+                    }
+
+                    println!("Finished waiting");
+
+                    //Assume none-option never occurs
+                    let task = task_queue.pop().unwrap();
+
+                    //Releasing lock before running task
+                    drop(lock);
+                    task();
                 }
-
-                let task = task_queue.pop().unwrap();
-                drop(lock);
-
-                task();
             });
+            println!("pushing thread to threads");
+            threads.push(thread);
         }
 
         Workers {
-            nr_workers,
             tasks,
             threads,
-            is_finished: false,
+            is_finished,
         }
     }
 
     fn post(&self, task: Task) {
+        println!("Creating task");
         let (lock, cvar) = &*self.tasks;
 
         let mut queue = lock.lock().unwrap();
@@ -109,6 +118,7 @@ impl Workers {
         let (lock, cv) = &*self.tasks;
         let mut queue = lock.lock().unwrap();
         queue.clear();
+        println!("Just cleared tasks");
 
         cv.notify_all();
     }
@@ -118,12 +128,30 @@ impl Workers {
         Workers::post(self, task);
     }
 
-    //Impl Drop for Workers???
-    fn drop(&mut self) {
+    fn join(&mut self) {
+        //While is_finished = false - vent på en cv for is_finished som notifyer når vecen er tom i
+        //thread metoden?????
+        println!("Calling jion");
         Workers::stop(self);
 
-        for thread in &self.threads {
-            let _ = &thread.join();
+        println!("isfinished: {}", self.is_finished);
+        let queue = std::mem::take(&mut self.threads);
+        for thread in queue {
+            let _ = thread.join().unwrap();
+        }
+    }
+}
+
+//Not really doing anything here, because dropping is essentially handled by join, but nice
+//having tried to implement at least once
+impl Drop for Workers {
+    fn drop(&mut self) {
+        println!("dropping + is_finished={}", self.is_finished);
+        Workers::stop(self);
+
+        let queue = std::mem::take(&mut self.threads);
+        for thread in queue {
+            let _ = thread.join();
         }
     }
 }
