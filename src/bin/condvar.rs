@@ -62,6 +62,7 @@ struct Workers {
 #[allow(unused_variables)]
 impl Workers {
     fn new(nr_workers: usize) -> Self {
+        //Må clone, men er løsningen å passe fra main?
         let tasks = Arc::new((Mutex::new(Vec::<Task>::new()), Condvar::new()));
         let threads = Vec::with_capacity(nr_workers);
 
@@ -103,9 +104,11 @@ impl Workers {
 
     fn stop(&mut self) {
         self.is_finished = true;
-        let (lock, _) = &*self.tasks;
+        let (lock, cv) = &*self.tasks;
         let mut queue = lock.lock().unwrap();
         queue.clear();
+
+        cv.notify_all();
     }
 
     fn post_timeout(&self, task: Task, delay: u64) {
@@ -113,6 +116,7 @@ impl Workers {
         Workers::post(self, task);
     }
 
+    //Impl Drop for Workers???
     fn drop(&mut self) {
         Workers::stop(self);
 
