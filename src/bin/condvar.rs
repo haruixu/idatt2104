@@ -38,9 +38,19 @@ fn main() {
         println!("Sum: {sum}");
     })));
 
+    event_loop.post_timeout(
+        Message::NewTask(Box::new(|| {
+            let mut sum = 690;
+            for i in (0..69).step_by(3) {
+                sum -= i;
+            }
+            println!("{sum}");
+        })),
+        3000,
+    );
+
     println!("Main done");
 
-    //std::thread::sleep(Duration::from_secs(3));
     worker_threads.stop();
     event_loop.stop();
 }
@@ -62,9 +72,6 @@ type Task = Box<dyn FnOnce() + Send + 'static>;
 /// Declare a task type to avoid needing to specify type each time
 ///
 /// Threads vec is needed to store the threads.
-///
-/// Is_finished flag is used to notify threads when to break loop
-/// Saw that you maybe could you condvar - broadcast (but gpt suggestion).
 struct Workers {
     tasks: Arc<(Mutex<Vec<Message>>, Condvar)>,
     threads: Vec<Option<thread::JoinHandle<()>>>, //Need to store thread somewhere
@@ -138,7 +145,6 @@ impl Workers {
     }
 }
 
-//Not really doing anything here, because dropping is essentially handled by join, but nice having tried to implement at least once
 impl Drop for Workers {
     fn drop(&mut self) {
         {
