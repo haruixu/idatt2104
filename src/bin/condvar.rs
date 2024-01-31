@@ -40,8 +40,9 @@ fn main() {
 
     println!("Main done");
 
-    std::thread::sleep(Duration::from_secs(3));
-    //todo calle på stop her!!!!!!
+    //std::thread::sleep(Duration::from_secs(3));
+    worker_threads.stop();
+    event_loop.stop();
 }
 
 //Sendng terminate-message equal to the amount of threads means that each thread is guranteed to
@@ -121,10 +122,13 @@ impl Workers {
 
     fn stop(&mut self) {
         let (lock, cv) = &*self.tasks;
-        for _ in &mut self.threads {
-            let mut queue = lock.lock().unwrap();
-            queue.push(Message::Terminate);
-            cv.notify_one();
+
+        if lock.lock().unwrap().is_empty() {
+            for _ in &mut self.threads {
+                let mut queue = lock.lock().unwrap();
+                queue.push(Message::Terminate);
+                cv.notify_one();
+            }
         }
     }
 
