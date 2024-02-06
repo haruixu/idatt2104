@@ -11,7 +11,7 @@ fn main() {
         for i in 0..10 {
             sum += i;
         }
-        println!("Sum: {sum}");
+        println!("Task 1 done: {sum}");
     })));
 
     worker_threads.post(Message::NewTask(Box::new(|| {
@@ -19,7 +19,7 @@ fn main() {
         for i in 0..20 {
             sum += i;
         }
-        println!("Sum: {sum}");
+        println!("Task 2 done: {sum}");
     })));
 
     event_loop.post(Message::NewTask(Box::new(|| {
@@ -27,7 +27,7 @@ fn main() {
         for i in 0..30 {
             sum += i;
         }
-        println!("Sum: {sum}");
+        println!("Task 3 done: {sum}");
     })));
 
     event_loop.post(Message::NewTask(Box::new(|| {
@@ -35,7 +35,7 @@ fn main() {
         for i in 0..40 {
             sum += i;
         }
-        println!("Sum: {sum}");
+        println!("Task 4 done: {sum}");
     })));
 
     event_loop.post_timeout(
@@ -44,15 +44,14 @@ fn main() {
             for i in (0..69).step_by(3) {
                 sum -= i;
             }
-            println!("{sum}");
+            println!("Task 5 done: {sum}");
         })),
         3000,
     );
 
-    println!("Main done");
-
     worker_threads.stop();
     event_loop.stop();
+    println!("Main done");
 }
 
 //Sendng terminate-message equal to the amount of threads means that each thread is guranteed to
@@ -81,13 +80,12 @@ impl Workers {
     fn new(nr_workers: usize) -> Self {
         let tasks = Arc::new((Mutex::new(Vec::<Message>::new()), Condvar::new()));
         let mut threads = Vec::with_capacity(nr_workers);
-        let is_finished = false;
 
         for _ in 0..nr_workers {
             let tasks = Arc::clone(&tasks);
 
             let thread = thread::spawn(move || {
-                while !is_finished {
+                loop {
                     let (lock, cvar) = &*tasks;
 
                     let mut task_queue = lock.lock().unwrap();
@@ -101,9 +99,8 @@ impl Workers {
 
                     match message {
                         Message::NewTask(task) => {
-                            println!("Starting");
                             //Releasing lock before running task
-                            drop(lock);
+                            let _ = drop(lock);
                             task();
                         }
 
@@ -118,7 +115,6 @@ impl Workers {
     }
 
     fn post(&self, task: Message) {
-        println!("Creating new task");
         let (lock, cvar) = &*self.tasks;
 
         let mut queue = lock.lock().unwrap();
