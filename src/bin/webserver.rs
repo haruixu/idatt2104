@@ -6,6 +6,7 @@ use std::{
     io::{prelude::*, BufReader},
     net::{TcpListener, TcpStream},
 };
+use typed_html;
 
 fn main() {
     //Alternative: 127.0.0.1:8080
@@ -23,13 +24,13 @@ fn main() {
 
 fn handle_connection(mut stream: TcpStream) {
     let buf_reader = BufReader::new(&mut stream);
-    /*let http_request: Vec<_> = buf_reader
+    let http_request: Vec<_> = buf_reader
         .lines()
         .map(|result| result.unwrap())
         .take_while(|line| !line.is_empty())
         .collect();
-    */
-    let request_line = buf_reader.lines().next().unwrap().unwrap();
+    println!("{:#?}", http_request)
+    /*let request_line = buf_reader.lines().next().unwrap().unwrap();
 
     let (status_line, filename) = match &request_line[..] {
         "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "data/request.html"),
@@ -48,5 +49,5 @@ fn handle_connection(mut stream: TcpStream) {
 
     //Here, we send the data back to the client
     stream.write_all(response.as_bytes()).unwrap();
-    stream.flush().unwrap();
+    stream.flush().unwrap();*/
 }
