@@ -5,9 +5,8 @@ use std::{
 
 fn main() {
     let port = "localhost:8080";
+    //Fails if server not running
     let mut stream = TcpStream::connect(port).unwrap();
-    /*stream.write_all("Hello server".as_bytes()).unwrap();
-    stream.flush().unwrap();*/
 
     let mut buffer = [0; 1024];
 
@@ -16,9 +15,10 @@ fn main() {
     println!("Server says: {message}");
 
     loop {
-        //Vente på input
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
+
+        //Fails if server CTRL-C
         stream.write_all(input.as_bytes()).unwrap();
         stream.flush().unwrap();
 

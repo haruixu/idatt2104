@@ -1,6 +1,8 @@
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
 
+use idatt2104::ThreadPool;
+
 fn handle_request(mut stream: TcpStream) {
     let welcome_msg = "\nWelcome to the calcuator. Please enter the equation in this format: <num><operator><num> followed by an ENTER-click\n 
         Example: 3+2\n 
@@ -11,7 +13,6 @@ fn handle_request(mut stream: TcpStream) {
     loop {
         let mut buffer = [0; 1024];
 
-        //todo blockke på input
         let size = stream.read(&mut buffer).unwrap();
         let equation = String::from_utf8_lossy(&buffer[..size]).trim().to_owned();
         println!("Client sent: {equation}");
@@ -51,6 +52,7 @@ fn handle_request(mut stream: TcpStream) {
 
 fn write_error_msg(mut stream: &TcpStream, error_msg: &str) {
     stream.write_all(error_msg.as_bytes()).unwrap();
+    //Unwrap fails when CTRL-C on client side, also fucks up for multiple clients
     stream.flush().unwrap();
 }
 
@@ -61,7 +63,9 @@ fn main() {
     let port = "localhost:8080";
     let listener = TcpListener::bind(port).unwrap();
 
+    let pool = ThreadPool::new(3);
+
     for stream in listener.incoming() {
-        handle_request(stream.unwrap());
+        pool.execute(|| handle_request(stream.unwrap()));
     }
 }
