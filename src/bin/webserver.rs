@@ -13,7 +13,7 @@ fn main() {
     let listener = TcpListener::bind(port).unwrap();
     let pool = ThreadPool::new(5);
 
-    for stream in listener.incoming().take(2) {
+    for stream in listener.incoming().take(5) {
         let stream = stream.unwrap();
 
         pool.execute(|| handle_connection(stream));
@@ -48,4 +48,5 @@ fn handle_connection(mut stream: TcpStream) {
 
     //Here, we send the data back to the client
     stream.write_all(response.as_bytes()).unwrap();
+    stream.flush().unwrap();
 }
