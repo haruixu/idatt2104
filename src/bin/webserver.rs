@@ -30,7 +30,6 @@ fn handle_connection(mut stream: TcpStream) {
         .collect();
 
     let request_line = http_request.first().unwrap();
-    println!("{request_line}");
 
     let (status_line, content) = match &request_line[..] {
         "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", create_content(&http_request)),
@@ -40,11 +39,6 @@ fn handle_connection(mut stream: TcpStream) {
         ),
     };
 
-    let valid = fs::read_to_string("data/request.html").unwrap();
-    let invalid = create_content(&http_request);
-
-    println!("{valid}");
-    println!("{invalid}");
     let response: String = format!("{status_line}\r\n\r\n{content}");
     //Here, we send the data back to the client
     stream.write_all(response.as_bytes()).unwrap();
