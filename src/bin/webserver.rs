@@ -1,12 +1,10 @@
 use idatt2104::ThreadPool;
-use std::thread;
-use std::time::Duration;
 use std::{
-    fs,
     io::{prelude::*, BufReader},
     net::{TcpListener, TcpStream},
 };
-use typed_html;
+use typed_html::dom::DOMTree;
+use typed_html::{html, text};
 
 fn main() {
     //Alternative: 127.0.0.1:8080
@@ -14,7 +12,7 @@ fn main() {
     let listener = TcpListener::bind(port).unwrap();
     let pool = ThreadPool::new(5);
 
-    for stream in listener.incoming().take(5) {
+    for stream in listener.incoming() {
         let stream = stream.unwrap();
 
         pool.execute(|| handle_connection(stream));
@@ -29,25 +27,40 @@ fn handle_connection(mut stream: TcpStream) {
         .map(|result| result.unwrap())
         .take_while(|line| !line.is_empty())
         .collect();
-    println!("{:#?}", http_request)
-    /*let request_line = buf_reader.lines().next().unwrap().unwrap();
 
-    let (status_line, filename) = match &request_line[..] {
-        "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "data/request.html"),
-        "GET /sleep HTTP/1.1" => {
-            thread::sleep(Duration::from_secs(5));
-            ("HTTP/1.1 200 OK", "data/request.html")
-        }
-        _ => ("HTTP/1.1 404 NOT FOUND", "data/404.html"),
-    };
+    let request_line = http_request.first().unwrap();
+    println!("{request_line}");
 
-    println!("{status_line}, {filename}");
-    let contents = fs::read_to_string(filename).unwrap();
-    let length = contents.len();
+    //Shitty ass code, because the same page is returned as long as the request is valid
+    let status_line = "HTTP/1.1 200 OK";
 
-    let response = format!("{status_line}\r\nContent-length: {length}\r\n\r\n{contents}");
+    let page: DOMTree<String> = html!(
+    <html>
+        <head>
+            <title>"mai title"</title>
+        </head>
+        <body>
+            <h1>"Yes, kom deg vekk herifra"</h1>
+            <ul>
+                { http_request
+                    .iter()
+                    .skip(1)
+                    .map(|line| html!(
+                        <li> { text!("{}", line) }</li>
+                    ))
+                }
+            </ul>
+        </body>
+    </html>
+    );
+
+    let page_str = page.to_string();
+    println!("{status_line}\r\n{page_str}");
+
+    //let response = format!("{status_line}\r\n\r\n");
+    let response = "HTTP/1.1 200 OK\r\n";
 
     //Here, we send the data back to the client
     stream.write_all(response.as_bytes()).unwrap();
-    stream.flush().unwrap();*/
+    stream.flush().unwrap();
 }
