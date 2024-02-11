@@ -4,9 +4,9 @@ use std::{
 };
 
 fn main() {
-    let port = "localhost:8080";
+    let socket_adr = "localhost:8080";
     //Fails if server not running
-    let mut stream = TcpStream::connect(port).unwrap();
+    let mut stream = TcpStream::connect(socket_adr).unwrap();
 
     let mut buffer = [0; 1024];
 
