@@ -5,10 +5,9 @@ fn main() -> std::io::Result<()> {
     let socket_adr = "localhost:8080";
     let socket = UdpSocket::bind(socket_adr)?;
 
-    let mut buf = [0; 1024];
-
-    let (_, src) = socket.recv_from(&mut buf)?;
-    let msg = std::str::from_utf8(&buf).expect("Should be valid utf8");
+    let mut buf = [0; 512];
+    let (amt, src) = socket.recv_from(&mut buf)?;
+    let msg = std::str::from_utf8(&buf[0..amt]).expect("Should be valid utf8");
 
     println!("Server sent: {msg}");
     loop {
@@ -18,11 +17,11 @@ fn main() -> std::io::Result<()> {
         let input = input.as_str().trim().as_bytes();
         socket.send_to(input, &src)?;
 
-        let mut buf = [0; 10];
+        let mut buf = [0; 64];
 
-        let (amt, src) = socket.recv_from(&mut buf)?;
+        let (amt, _) = socket.recv_from(&mut buf)?;
 
-        let equation = std::str::from_utf8(&buf).expect("Should be valid utf8");
+        let equation = std::str::from_utf8(&buf[0..amt]).expect("Should be valid utf8");
 
         println!("{equation}");
     }
