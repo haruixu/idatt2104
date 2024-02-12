@@ -53,6 +53,7 @@ fn create_content(http_request: &Vec<String>) -> String {
         .with_container(
             http_request
                 .iter()
+                .skip(1)
                 .fold(Container::new(ContainerType::UnorderedList), |a, n| {
                     a.with_paragraph(n)
                 }),

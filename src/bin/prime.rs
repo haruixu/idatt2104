@@ -1,5 +1,5 @@
-use std::thread;
 use std::sync::{Arc, Mutex};
+use std::thread;
 
 fn main() {
     //create base mutex for vector with reference count (arc)
@@ -11,20 +11,20 @@ fn main() {
     let mut threads = Vec::new();
 
     for thread in 0..nr_threads {
-
         let arc_mutex_copy = Arc::clone(&primes_mutex_arc);
 
         // move forces ownership of all variables in closure into the closure
         // i is copied into thread
         threads.push(thread::spawn(move || {
-
             let start_nr = thread + start_nr;
 
             let mut primes = arc_mutex_copy.lock().unwrap();
 
-            (start_nr..=end_nr).into_iter().step_by(nr_threads)
-               .filter(|num| is_prime(*num))
-               .for_each(|num| primes.push(num));
+            (start_nr..=end_nr)
+                .into_iter()
+                .step_by(nr_threads)
+                .filter(|num| is_prime(*num))
+                .for_each(|num| primes.push(num));
         }));
     }
 
@@ -43,12 +43,12 @@ fn is_prime(number: usize) -> bool {
     //            return false;
     //        }
     //    }
-    if number%2 == 0 {
+    if number % 2 == 0 {
         return false;
     }
     let is_prime = (3..=(number as f64).sqrt() as usize)
         .into_iter()
         .step_by(2)
-        .all(|num| number%num != 0);
+        .all(|num| number % num != 0);
     is_prime
 }
