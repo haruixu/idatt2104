@@ -3,4 +3,6 @@ fn main() {
     let y = 3;
 
     let z = x + y;
+
+    let s = Sting::from("hello");
 }
