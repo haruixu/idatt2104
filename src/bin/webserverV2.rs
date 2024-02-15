@@ -95,11 +95,10 @@ fn parse_content(body: Vec<u8>) -> String {
         if let Ok(output) = String::from_utf8(cargo_child.stdout) {
             result = output;
         }
+    } else {
+        if let Ok(output) = String::from_utf8(cargo_child.stderr) {
+            result = output;
+        }
     }
-
-    if let Ok(output) = String::from_utf8(cargo_child.stderr) {
-        result = output;
-    }
-
     result
 }
