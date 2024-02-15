@@ -3,7 +3,7 @@ use std::{
     fs::{self, File},
     io::{prelude::*, BufReader},
     net::{TcpListener, TcpStream},
-    process::{Command, Stdio},
+    process::{Command, Output},
 };
 
 fn main() {
@@ -73,14 +73,14 @@ fn handle_connection(mut stream: TcpStream) {
 
 fn parse_content(body: Vec<u8>) -> String {
     //Read code
-    let code = String::from_utf8(body).expect("Should parse to string");
-    let file_path = "src/bin/temp.rs";
+    let code: String = String::from_utf8(body).expect("Should parse to string");
+    let file_path: &str = "src/bin/temp.rs";
 
     //Write to file
-    let mut file = File::create(file_path).expect("Should create file");
+    let mut file: File = File::create(file_path).expect("Should create file");
     file.write_all(code.as_bytes())
         .expect("Should write to file");
-    let cargo_child = Command::new("cargo")
+    let cargo_child: Output = Command::new("cargo")
         .arg("run")
         .arg("--bin")
         .arg("temp")
