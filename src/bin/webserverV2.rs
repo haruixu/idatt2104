@@ -57,13 +57,14 @@ fn handle_connection(mut stream: TcpStream) {
 
     //Handle request line
     let (status_line, content) = match &request_line[..] {
-        "POST /compile HTTP/1.1" => ("HTTP/1.1 200 OK", parse_content(buffer)),
+        "POST /compile HTTP/1.1\r\n" => ("HTTP/1.1 200 OK", parse_content(buffer)),
         _ => (
             "HTTP/1.1 404 NOT FOUND",
             fs::read_to_string("data/404.html").unwrap(),
         ),
     };
 
+    println!("{content}");
     //Format response
     let response: String = format!("{status_line}\r\n\r\n{content}");
     //Here, we send the data back to the client
@@ -92,13 +93,11 @@ fn parse_content(body: Vec<u8>) -> String {
 
     if !cargo_child.stdout.is_empty() {
         if let Ok(output) = String::from_utf8(cargo_child.stdout) {
-            println!("stdout: {output}");
             result = output;
         }
     }
 
     if let Ok(output) = String::from_utf8(cargo_child.stderr) {
-        println!("stderr: {output}");
         result = output;
     }
 
