@@ -28,6 +28,7 @@ fn handle_connection(mut stream: TcpStream) {
     .take_while(|line| !line.is_empty())
     .collect();*/
 
+    //Get request body
     let mut request_line = String::new();
     let _ = reader.read_line(&mut request_line);
 
@@ -54,6 +55,7 @@ fn handle_connection(mut stream: TcpStream) {
     let mut buffer = vec![0; size]; //New Vector with size of Content
     reader.read_exact(&mut buffer).unwrap(); //Get the Body Content
 
+    //Handle request line
     let (status_line, content) = match &request_line[..] {
         "POST /compile HTTP/1.1" => ("HTTP/1.1 200 OK", parse_content(buffer)),
         _ => (
@@ -62,6 +64,7 @@ fn handle_connection(mut stream: TcpStream) {
         ),
     };
 
+    //Format response
     let response: String = format!("{status_line}\r\n\r\n{content}");
     //Here, we send the data back to the client
     stream.write_all(response.as_bytes()).unwrap();
@@ -69,13 +72,35 @@ fn handle_connection(mut stream: TcpStream) {
 }
 
 fn parse_content(body: Vec<u8>) -> String {
-    //skip reading request until \r\n, then start reading until empty line
+    //Read code
     let code = String::from_utf8(body).expect("Should parse to string");
     let file_path = "src/bin/temp.rs";
 
+    //Write to file
     let mut file = File::create(file_path).expect("Should create file");
     file.write_all(code.as_bytes())
         .expect("Should write to file");
+    let cargo_child = Command::new("cargo")
+        .arg("run")
+        .arg("--bin")
+        .arg("temp")
+        .output()
+        .expect("Couldn't compile");
 
-    String::from("dkfj")
+    //Match result
+    let mut result: String = String::new();
+
+    if !cargo_child.stdout.is_empty() {
+        if let Ok(output) = String::from_utf8(cargo_child.stdout) {
+            println!("stdout: {output}");
+            result = output;
+        }
+    }
+
+    if let Ok(output) = String::from_utf8(cargo_child.stderr) {
+        println!("stderr: {output}");
+        result = output;
+    }
+
+    result
 }
