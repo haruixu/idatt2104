@@ -1,17 +1,19 @@
-FROM ubuntu:latest
+#Use rust:lastest as base image
+FROM rust:latest 
+#Specify workdir in container
+WORKDIR /rust_docker
+#Copy dependency files over first
+COPY Cargo.lock Cargo.toml .
+#Copy over binary and create default module structure with main.rs as the sole binary
+COPY src/bin/temp.rs ./src/main
+#Default command the container runs when it is created
+CMD ["cargo", "run"]
 
-# Update default packages
-RUN apt-get update
-
-# Get Ubuntu packages
-RUN apt-get install -y \
-    build-essential \
-    curl
-
-# Update new packages
-RUN apt-get update
-
-# Get Rust
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-
-RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
+# New virtualized file structure looks like this: 
+# Docker-container (root)
+# |-- rust-docker
+# |   |-- src
+# |       |--main.rs
+# |   |-- Cargo.toml
+# |   |-- Cargo.lock
+# |-- Dockerfile ??unsure abothisone

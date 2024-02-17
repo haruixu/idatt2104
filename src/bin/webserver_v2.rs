@@ -59,7 +59,7 @@ fn handle_connection(mut stream: TcpStream) {
 
     //Handle request line
     let (status_line, content) = match &request_line[..] {
-        "POST /compile HTTP/1.1\r\n" => ("HTTP/1.1 201 CREATED", parse_content(buffer)),
+        "POST /compile HTTP/1.1\r\n" => ("HTTP/1.1 201 CREATED", run_code_virtualized(buffer)),
         _ => (
             "HTTP/1.1 404 NOT FOUND",
             fs::read_to_string("data/404.html").unwrap(),
@@ -83,7 +83,61 @@ fn handle_connection(mut stream: TcpStream) {
     stream.flush().unwrap();
 }
 
-fn parse_content(body: Vec<u8>) -> String {
+fn run_code_virtualized(body: Vec<u8>) -> String {
+    //Read code
+    let code: String = String::from_utf8(body).expect("Should parse to string");
+    let file_path: &str = "src/bin/temp.rs";
+
+    //Write to file
+    let mut file: File = File::create(file_path).expect("Should create file");
+    file.write_all(code.as_bytes())
+        .expect("Should write to file");
+
+    let docker_build_child: Output = Command::new("docker")
+        .arg("build")
+        .arg("-t")
+        .arg("rust-image")
+        .arg(".")
+        .output()
+        .expect("Couldn't compile");
+
+    println!("Docker build finished");
+    println!("stdout{:?}", String::from_utf8(docker_build_child.stdout));
+    println!("stderr{:?}", String::from_utf8(docker_build_child.stderr));
+
+    let docker_run_child: Output = Command::new("docker")
+        .arg("run")
+        .arg("--rm")
+        .arg("rust-image")
+        .output()
+        .expect("Couldn't compile");
+
+    println!("Docker run finished");
+    println!(
+        "stdout{:?}",
+        String::from_utf8(docker_run_child.stdout.clone())
+    );
+    println!(
+        "stderr{:?}",
+        String::from_utf8(docker_run_child.stderr.clone())
+    );
+
+    //Match result
+    let mut result: String = String::new();
+
+    if !docker_run_child.stdout.is_empty() {
+        if let Ok(output) = String::from_utf8(docker_run_child.stdout) {
+            result = output;
+        }
+    } else {
+        if let Ok(output) = String::from_utf8(docker_run_child.stderr) {
+            result = output;
+        }
+    }
+    result
+}
+
+fn run_code(body: Vec<u8>) -> String {
     //Read code
     let code: String = String::from_utf8(body).expect("Should parse to string");
     let file_path: &str = "src/bin/temp.rs";
