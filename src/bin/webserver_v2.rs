@@ -93,7 +93,7 @@ fn run_code_virtualized(body: Vec<u8>) -> String {
     file.write_all(code.as_bytes())
         .expect("Should write to file");
 
-    let docker_build_child: Output = Command::new("docker")
+    let _: Output = Command::new("docker")
         .arg("build")
         .arg("-t")
         .arg("rust-image")
@@ -102,9 +102,6 @@ fn run_code_virtualized(body: Vec<u8>) -> String {
         .expect("Couldn't compile");
 
     println!("Docker build finished");
-    println!("stdout{:?}", String::from_utf8(docker_build_child.stdout));
-    println!("stderr{:?}", String::from_utf8(docker_build_child.stderr));
-
     let docker_run_child: Output = Command::new("docker")
         .arg("run")
         .arg("--rm")
@@ -113,14 +110,6 @@ fn run_code_virtualized(body: Vec<u8>) -> String {
         .expect("Couldn't compile");
 
     println!("Docker run finished");
-    println!(
-        "stdout{:?}",
-        String::from_utf8(docker_run_child.stdout.clone())
-    );
-    println!(
-        "stderr{:?}",
-        String::from_utf8(docker_run_child.stderr.clone())
-    );
 
     //Match result
     let mut result: String = String::new();
