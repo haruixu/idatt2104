@@ -2,7 +2,7 @@
 FROM rust:latest 
 #Name the workdir in container
 WORKDIR /rust_docker
-#Copy dependency files over first (not sure if this helps, but I think this prevents redownloading dependencies for new image if nothing changed- see last paragraph)
+#Copy dependency files over first (not sure if this helps, but I think this prevents redownloading dependencies for new image if nothing was changed - see last paragraph)
 COPY Cargo.lock Cargo.toml .
 #Copy over binary and make this main.rs
 COPY src/bin/temp.rs ./src/main.rs
