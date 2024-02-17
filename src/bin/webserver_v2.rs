@@ -21,11 +21,6 @@ fn main() {
 
 fn handle_connection(mut stream: TcpStream) {
     let mut reader = BufReader::new(&mut stream);
-    /*let http_request: Vec<String> = buf_reader
-    .lines()
-    .map(|result| result.unwrap())
-    .take_while(|line| !line.is_empty())
-    .collect();*/
 
     //Get request body
     let mut request_line = String::new();
@@ -54,6 +49,14 @@ fn handle_connection(mut stream: TcpStream) {
     let mut buffer = vec![0; size]; //New Vector with size of Content
     reader.read_exact(&mut buffer).unwrap(); //Get the Body Content
 
+    if request_line.starts_with("OPTIONS") {
+        // Handle OPTIONS request
+        println!("OPTIONS request!!!");
+        let response = "HTTP/1.1 200 OK\r\n{}\r\n";
+        stream.write_all(response.as_bytes()).unwrap();
+        return;
+    }
+
     //Handle request line
     let (status_line, content) = match &request_line[..] {
         "POST /compile HTTP/1.1\r\n" => ("HTTP/1.1 201 CREATED", parse_content(buffer)),
@@ -63,10 +66,17 @@ fn handle_connection(mut stream: TcpStream) {
         ),
     };
 
-    //let header: &str = "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, PUT, POST, DELETE, HEAD and OPTIONS";
+    //Browser sends OPTIONS request + POST request, instead of just POST as postman does
+    //OPTIONS request looks for matching Access-Control-Allow-Origin header in response.
+    //      ^^^According to stackoverflow, but i didnt need any allow-access-control-methods header
+    //         What I did need was Access-Control-Allow-Credentials: true for cookies
+    //Need the response to be 2xx, have the origin (frontend url) allowed, and used http request
+    //methods allowed for the backend to throw a CORS ruckus.
+    let header: &str =
+        "Access-Control-Allow-Origin: http://localhost:5173\r\nAccess-Control-Allow-Credentials: true";
     println!("{content}");
     //Format response
-    let response: String = format!("{status_line}\r\n\r\n{content}");
+    let response: String = format!("{status_line}\r\n{header}\r\n\r\n{content}");
     //Here, we send the data back to the client
     stream.write_all(response.as_bytes()).unwrap();
     println!("Sent response");
