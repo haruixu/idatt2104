@@ -1,12 +1,12 @@
 #Use rust:lastest as base image
 FROM rust:latest 
-#Specify workdir in container
+#Name the workdir in container
 WORKDIR /rust_docker
-#Copy dependency files over first
+#Copy dependency files over first (not sure if this helps, but I think this prevents redownloading dependencies if nothing was changed)
 COPY Cargo.lock Cargo.toml .
-#Copy over binary and create default module structure with main.rs as the sole binary
+#Copy over binary and make this main.rs
 COPY src/bin/temp.rs ./src/main
-#Default command the container runs when it is created
+#Default command: the container runs "cargo run" when it is created (runs main.rs)
 CMD ["cargo", "run"]
 
 # New virtualized file structure looks like this: 
