@@ -7,8 +7,7 @@ use std::{
 };
 
 fn main() {
-    //Alternative: 127.0.0.1:8080
-    let port = "localhost:8080";
+    let port = "127.0.0.1:3000";
     let listener = TcpListener::bind(port).unwrap();
     let pool = ThreadPool::new(5);
 
@@ -57,18 +56,20 @@ fn handle_connection(mut stream: TcpStream) {
 
     //Handle request line
     let (status_line, content) = match &request_line[..] {
-        "POST /compile HTTP/1.1\r\n" => ("HTTP/1.1 200 OK", parse_content(buffer)),
+        "POST /compile HTTP/1.1\r\n" => ("HTTP/1.1 201 CREATED", parse_content(buffer)),
         _ => (
             "HTTP/1.1 404 NOT FOUND",
             fs::read_to_string("data/404.html").unwrap(),
         ),
     };
 
+    //let header: &str = "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, PUT, POST, DELETE, HEAD and OPTIONS";
     println!("{content}");
     //Format response
     let response: String = format!("{status_line}\r\n\r\n{content}");
     //Here, we send the data back to the client
     stream.write_all(response.as_bytes()).unwrap();
+    println!("Sent response");
     stream.flush().unwrap();
 }
 
@@ -81,6 +82,7 @@ fn parse_content(body: Vec<u8>) -> String {
     let mut file: File = File::create(file_path).expect("Should create file");
     file.write_all(code.as_bytes())
         .expect("Should write to file");
+
     let cargo_child: Output = Command::new("cargo")
         .arg("run")
         .arg("--bin")
