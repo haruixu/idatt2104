@@ -8,5 +8,5 @@ ___
 - Assignment 2: condvar
 - Assignment 3: simple-server, simple-client, webserver (request.html, 404.html)
 - Assignment 4: udp-client, udp-server
-- Assignment 5: 
+- Assignment 5: Dockerfile, webserver_v2 + vue frontend: 
 - Assignment 6: 
