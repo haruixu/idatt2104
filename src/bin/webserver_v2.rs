@@ -49,14 +49,6 @@ fn handle_connection(mut stream: TcpStream) {
     let mut buffer = vec![0; size]; //New Vector with size of Content
     reader.read_exact(&mut buffer).unwrap(); //Get the Body Content
 
-    if request_line.starts_with("OPTIONS") {
-        // Handle OPTIONS request
-        println!("OPTIONS request!!!");
-        let response = "HTTP/1.1 200 OK\r\n{}\r\n";
-        stream.write_all(response.as_bytes()).unwrap();
-        return;
-    }
-
     //Handle request line
     let (status_line, content) = match &request_line[..] {
         "POST /compile HTTP/1.1\r\n" => ("HTTP/1.1 201 CREATED", run_code_virtualized(buffer)),
@@ -73,7 +65,7 @@ fn handle_connection(mut stream: TcpStream) {
     //Need the response to be 2xx, have the origin (frontend url) allowed, and used http request
     //methods allowed for the backend to throw a CORS ruckus.
     let header: &str =
-        "Access-Control-Allow-Origin: http://localhost:5173\r\nAccess-Control-Allow-Credentials: true";
+        "Access-Control-Allow-Origin: http://localhost:5173\r\nAccess-Control-Allow-Methods: POST, OPTIONS\r\nAccess-Control-Allow-Credentials: true";
     println!("{content}");
     //Format response
     let response: String = format!("{status_line}\r\n{header}\r\n\r\n{content}");
