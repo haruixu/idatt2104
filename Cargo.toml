@@ -7,3 +7,40 @@ edition = "2021"
 build_html = "2.4.0"
 #tokio = { version = "1", features = ["full"] }
 #mini-redis = "0.4"
+
+[[bin]]
+name = "prime"
+path = "src/bin/assignment1/prime.rs"
+
+
+[[bin]]
+name = "condvar"
+path = "src/bin/assignment2/condvar.rs"
+
+[[bin]]
+name = "tcpclient"
+path = "src/bin/assignment3/simple-client.rs"
+
+[[bin]]
+name = "tcpserver"
+path = "src/bin/assignment3/simple-server.rs"
+
+[[bin]]
+name = "webserver"
+path = "src/bin/assignment3/webserver.rs"
+
+[[bin]]
+name = "udp-client"
+path = "src/bin/assignment4/udp-client.rs"
+
+[[bin]]
+name = "udp-server"
+path = "src/bin/assignment4/udp-server.rs"
+
+[[bin]]
+name = "compiler"
+path = "src/bin/assignment5/webserver_v2.rs"
+
+[[bin]]
+name = "websocket"
+path = "src/bin/assignment6/websocket.rs"
