@@ -9,7 +9,7 @@ fn main() -> Result<(), std::io::Error> {
         let to_socket_adr: SocketAddrV4 = SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 8080);
         let mut stream: TcpStream = TcpStream::connect(to_socket_adr)?;
 
-        let request_line: &str = "GET / HTTP/1.1\r\n";
+        let request_line: &str = "GET / HTTP/1.1";
 
         let mut headers: Vec<String> = Vec::new();
         add_header(&mut headers, "Host: ntnu.no");
@@ -35,7 +35,7 @@ fn add_header(headers: &mut Vec<String>, header: &str) {
 }
 
 fn create_request(request_line: &str, headers: Vec<String>) -> String {
-    let mut request: String = String::from(request_line);
+    let mut request: String = format!("{request_line}\r\n");
 
     for header in &headers {
         request.push_str(header.as_str());
