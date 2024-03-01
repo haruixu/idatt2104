@@ -12,7 +12,6 @@ build_html = "2.4.0"
 name = "prime"
 path = "src/bin/assignment1/prime.rs"
 
-
 [[bin]]
 name = "condvar"
 path = "src/bin/assignment2/condvar.rs"
@@ -42,5 +41,9 @@ name = "compiler"
 path = "src/bin/assignment5/webserver_v2.rs"
 
 [[bin]]
-name = "websocket"
-path = "src/bin/assignment6/websocket.rs"
+name = "websocketserver"
+path = "src/bin/assignment6/websocket-server.rs"
+
+[[bin]]
+name = "websocketclient"
+path = "src/bin/assignment6/websocket-client.rs"
