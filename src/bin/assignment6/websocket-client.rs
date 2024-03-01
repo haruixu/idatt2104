@@ -31,7 +31,6 @@ fn main() -> Result<(), std::io::Error> {
 
 fn add_header(headers: &mut Vec<String>, header: &str) {
     let crlf_header: String = format!("{}\r\n", header);
-    print!("{crlf_header}");
     headers.push(crlf_header);
 }
 

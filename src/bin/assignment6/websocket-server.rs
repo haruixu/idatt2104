@@ -39,12 +39,16 @@ impl Websocket {
         println!("headers: {:#?}", headers);
 
         let key = headers.get("Sec-WebSocket-Key".into());
+        dbg!(key);
+
+        //let Sec-WebSocket-Accept: &str = Base64encode(sha1(key + self.magic_string));
 
         //**handshake
         // X Må reade request , Lese upgrade feltet
         //Oppgradere til websocket - dekode keyen
         //
         //**Meldinger
+        //Få klient til å encode melding
         //Demaskere data i body
         Ok(())
     }
