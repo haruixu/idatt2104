@@ -16,9 +16,7 @@ CMD ["cargo", "run"]
 # |       |--main.rs
 # |   |-- Cargo.toml
 # |   |-- Cargo.lock
-# |-- Dockerfile ??unsure abothisone
 #
-# Consider Dockerfile
 
 # https://stackoverflow.com/questions/38613216/rebuild-same-docker-image-with-only-the-additional-changes-in-the-dockerfile
 # FROM something
